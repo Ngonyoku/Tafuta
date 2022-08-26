@@ -1,0 +1,106 @@
+{
+  "project_info": {
+    "project_number": "338672022333",
+    "firebase_url": "https://travelmantics-104e4.firebaseio.com",
+    "project_id": "travelmantics-104e4",
+    "storage_bucket": "travelmantics-104e4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:338672022333:android:a5e08f87f338d446b9cb54",
+        "android_client_info": {
+          "package_name": "com.rickprojects.pluralsight_course.travelmantics"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "338672022333-q1k3kjvjffto5cn2velpjg21okgud1rs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rickprojects.pluralsight_course.travelmantics",
+            "certificate_hash": "f57e72f789f335b54b49abd5be79281e7b796a72"
+          }
+        },
+        {
+          "client_id": "338672022333-vmpap3i4fs6jentattfph52dc06fj28m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzfjumnUxTwOJL3DpgVOZGWnO8kkA36AM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "338672022333-vmpap3i4fs6jentattfph52dc06fj28m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:338672022333:android:b56bab165ed8cb04b9cb54",
+        "android_client_info": {
+          "package_name": "ke.co.kbanda.tafuta"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "338672022333-vmpap3i4fs6jentattfph52dc06fj28m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzfjumnUxTwOJL3DpgVOZGWnO8kkA36AM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "338672022333-vmpap3i4fs6jentattfph52dc06fj28m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:338672022333:android:c60a10d7ce7fa4f4b9cb54",
+        "android_client_info": {
+          "package_name": "ke.co.kbanda_projects.childmonitoringsystem"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "338672022333-vmpap3i4fs6jentattfph52dc06fj28m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzfjumnUxTwOJL3DpgVOZGWnO8kkA36AM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "338672022333-vmpap3i4fs6jentattfph52dc06fj28m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
