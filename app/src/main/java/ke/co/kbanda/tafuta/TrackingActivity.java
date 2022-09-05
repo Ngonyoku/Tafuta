@@ -1,41 +1,65 @@
 package ke.co.kbanda.tafuta;
 
 import androidx.annotation.NonNull;
-import androidx.fragment.app.FragmentActivity;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
-import android.app.AlertDialog;
-import android.content.Context;
-import android.content.Intent;
-import android.location.Location;
-import android.location.LocationManager;
 import android.os.Bundle;
-import android.os.Looper;
-import android.provider.Settings;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 import ke.co.kbanda.tafuta.databinding.ActivityTrackingBinding;
+import ke.co.kbanda.tafuta.models.LocationHistory;
+import ke.co.kbanda.tafuta.models.Member;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
-public class TrackingActivity extends FragmentActivity implements OnMapReadyCallback {
+public class TrackingActivity extends AppCompatActivity implements OnMapReadyCallback {
     private static final String TAG = "TrackingActivity";
     public static final int REQUEST_CODE_MAPS_PERMISSIONS = 524;
     private GoogleMap map;
     private ActivityTrackingBinding binding;
+    private Member member = null;
+    private List<LocationHistory> locationHistories;
+
+    private FusedLocationProviderClient locationProviderClient;
+    private Toolbar toolbar;
+
+    private FirebaseDatabase firebaseDatabase;
+    private DatabaseReference databaseReference;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,10 +68,115 @@ public class TrackingActivity extends FragmentActivity implements OnMapReadyCall
         binding = ActivityTrackingBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        toolbar = binding.toolbar;
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        locationHistories = new ArrayList<>();
+
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        databaseReference = firebaseDatabase.getReference();
+
+        CircleImageView profileImage = binding.profileImage;
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        locationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
+        if (getIntent().getExtras() != null) {
+            member = (Member) getIntent().getSerializableExtra("member");
+            if (member != null) {
+                String name = member.getFirstName() + " " + member.getLastName();
+                getSupportActionBar().setTitle(name);
+                if (member.getImageUrl() != null && !member.getImageUrl().isEmpty()) {
+                    Glide
+                            .with(this)
+                            .load(member.getImageUrl())
+                            .centerCrop()
+                            .into(profileImage)
+                    ;
+                }
+            }
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.tracking_activity_toolbar, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.actionAbout: {
+                displayUserInformation();
+                return true;
+            }
+            case R.id.actionGetCurrentLocation: {
+                getMostRecentLocation();
+                return true;
+            }
+            case R.id.actionRefreshMap: {
+                displayLocationHistory();
+                return true;
+            }
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+
+    }
+
+    private void getMostRecentLocation() {
+        if (locationHistories != null) {
+            if (!locationHistories.isEmpty()) {
+                LocationHistory history = locationHistories.get(locationHistories.size() - 1);
+                Timestamp timestamp = getTimestamp(history);
+                LatLng latLng = getLatLng(history);
+
+                map.addMarker(
+                        new MarkerOptions()
+                                .title("Last known location")
+                                .position(latLng)
+                                .snippet(timestamp.toString())
+                );
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+            }
+        }
+    }
+
+    private void displayUserInformation() {
+        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this, R.style.BottomSheetDialogTheme);
+        View bottomSheetView = LayoutInflater
+                .from(getApplicationContext())
+                .inflate(R.layout.bottom_sheet_user_info,
+                        (ConstraintLayout) findViewById(R.id.bottomSheetContainer)
+                );
+        TextView name = (TextView) bottomSheetView.findViewById(R.id.displayName);
+        TextView email = (TextView) bottomSheetView.findViewById(R.id.email);
+        TextView label = (TextView) bottomSheetView.findViewById(R.id.label);
+        ImageView profileImage = (ImageView) bottomSheetView.findViewById(R.id.profileImageImageView);
+
+        if (member != null) {
+            String memberName = member.getFirstName() + " " + member.getLastName();
+            name.setText(memberName);
+            email.setText(member.getEmail());
+            label.setText(member.getLabel());
+            String imageUrl = member.getImageUrl();
+            if (imageUrl != null) {
+                Glide
+                        .with(this)
+                        .load(imageUrl)
+                        .centerCrop()
+                        .into(profileImage)
+                ;
+            }
+        }
+
+        bottomSheetDialog.setContentView(bottomSheetView);
+        bottomSheetDialog.show();
     }
 
     /**
@@ -62,21 +191,19 @@ public class TrackingActivity extends FragmentActivity implements OnMapReadyCall
     @Override
     public void onMapReady(GoogleMap googleMap) {
         map = googleMap;
-
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        map.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        map.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        map.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        Log.d(TAG, "onMapReady: Map is ready...");
+        checkLocationPermissions();
     }
 
     @AfterPermissionGranted(REQUEST_CODE_MAPS_PERMISSIONS)
-    private void checkLocationPermissions(GoogleMap googleMap) {
+    private void checkLocationPermissions() {
         String[] permissions = {
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION
         };
         if (EasyPermissions.hasPermissions(this, permissions)) {
-            getUserCurrentLocation(googleMap);
+            displayLocationHistory();
         } else {
             EasyPermissions
                     .requestPermissions(
@@ -88,89 +215,107 @@ public class TrackingActivity extends FragmentActivity implements OnMapReadyCall
         }
     }
 
-    private FusedLocationProviderClient locationProviderClient;
-
-    /*
-     * Check to see the user's current location
-     * */
-    @SuppressLint("MissingPermission")
-    private void getUserCurrentLocation(GoogleMap googleMap) {
-        LocationManager locationManager = (LocationManager)
-                getSystemService(Context.LOCATION_SERVICE);
-        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-                || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-            //If/When the location service in enabled, get the last location
-            locationProviderClient
-                    .getLastLocation()
-                    .addOnCompleteListener(new OnCompleteListener<Location>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Location> task) {
-                            //Initialize location
-                            Location location = task.getResult();
-                            if (location != null) {
-                                //Display the user location on map
-                                displayCurrentLocation(
-                                        location.getLatitude(),
-                                        location.getLongitude()
-                                );
-                            } else {
-                                //Initialize Location Request if location is Null
-                                LocationRequest locationRequest = new LocationRequest()
-                                        .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY)
-                                        .setInterval(1000)
-                                        .setFastestInterval(10000)
-                                        .setNumUpdates(1);
-                                LocationCallback callback = new LocationCallback() {
-                                    @Override
-                                    public void onLocationResult(LocationResult locationResult) {
-                                        super.onLocationResult(locationResult);
-                                        Location location1 = locationResult.getLastLocation();
-                                        displayCurrentLocation(
-                                                location1.getLatitude(),
-                                                location1.getLongitude()
-                                        );
+    private void displayLocationHistory() {
+        Log.d(TAG, "displayLocationHistory: Displaying Location History...");
+        if (map != null) {
+            if (member != null) {
+                String userId = member.getUserId();
+                if (userId != null && !userId.isEmpty()) {
+                    Log.d(TAG, "displayLocationHistory: Fetching data from database...");
+                    databaseReference
+                            .child("LocationHistory")
+                            .child(userId)
+                            .orderByChild("timestamp")
+                            .addValueEventListener(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    Log.d(TAG, "onDataChange: fetching location histories..");
+                                    locationHistories.clear();
+                                    Log.d(TAG, "onDataChange: Location Histories -> " + locationHistories.toString());
+                                    for (DataSnapshot historySnapshot : snapshot.getChildren()) {
+                                        Log.d(TAG, "onDataChange: HistorySnapshot -> " + historySnapshot);
+                                        LocationHistory locationHistory = historySnapshot.getValue(LocationHistory.class);
+                                        locationHistories.add(locationHistory);
+                                        Log.d(TAG, "onDataChange: Location Histories -> " + locationHistories.toString());
+                                        Log.d(TAG, "onChildAdded: LocationHistory -> " + locationHistory);
                                     }
-                                };
-                                locationProviderClient
-                                        .requestLocationUpdates(
-                                                locationRequest,
-                                                callback,
-                                                Looper.myLooper()
-                                        )
-                                ;
-                            }
-//                            fetchHostelsFromDatabase();
-                        }
-                    });
+                                    drawPolylinesOnMap();
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+                                    Log.d(TAG, "onCancelled: Error " + error.getMessage());
+                                }
+                            })
+                    ;
+                }
+            } else {
+                Log.d(TAG, "displayLocationHistory: Member is NULL..");
+            }
         } else {
-            //If the location has NOT yet been enabled... take user to location settings
-            new AlertDialog.Builder(this)
-                    .setTitle("Get Current Location")
-                    .setIcon(R.drawable.ic_map)
-                    .setMessage("Please switch on your device's location so we can determine the hostels around you")
-                    .setPositiveButton("OK", ((dialogInterface, i) -> {
-                        startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-                    }))
-                    .create()
-                    .show()
-            ;
+            Log.d(TAG, "displayLocationHistory: Map is NULL !...");
         }
     }
 
-    private void displayCurrentLocation(double latitude, double longitude) {
-        if (map != null) {
-            LatLng userLocation = new LatLng(latitude, longitude);
-//            MarkerOptions your_current_location = new MarkerOptions()
-//                    .position(userLocation)
-//                    .title("Your current location")
-//                    .snippet("This is where you are at right now")
-//                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN));
-//            map.addMarker(your_current_location
-//            );
-            map.animateCamera(CameraUpdateFactory.newLatLngZoom(
-                    new LatLng(latitude, longitude),
-                    10
-            ));
+    private void drawPolylinesOnMap() {
+        Log.d(TAG, "drawPolylinesOnMap: Drawing Polyines");
+        if (locationHistories != null) {
+            if (!locationHistories.isEmpty()) {
+                PolylineOptions polylineOptions = new PolylineOptions();
+                polylineOptions.clickable(true);
+
+                for (int i = 0; i < locationHistories.size(); i++) {
+                    LocationHistory history = locationHistories.get(i);
+                    if (history != null) {
+                        LatLng latLng = getLatLng(history);
+                        polylineOptions.add(latLng);
+                        Log.d(TAG, "drawPolylinesOnMap: history -> " + history.toString());
+
+                        if (i + 1 == locationHistories.size()) {
+                            final Timestamp timestamp = getTimestamp(history);
+                            //Add Marker
+                            map.addMarker(new MarkerOptions()
+                                    .position(latLng)
+                                    .title(timestamp.toString())
+                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+
+                            );
+                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
+                        } else {
+                            final Timestamp timestamp = getTimestamp(history);
+                            //Add Marker
+                            map.addMarker(new MarkerOptions()
+                                    .position(latLng)
+                                    .title(timestamp.toString())
+                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
+
+                            );
+                        }
+                    }
+                }
+
+                map.addPolyline(
+                        polylineOptions
+                );
+            }
+        } else {
+            Log.d(TAG, "drawPolylinesOnMap: LocationHistories is NULL!");
         }
+    }
+
+    @NonNull
+    private LatLng getLatLng(LocationHistory history) {
+        double latitude = Double.parseDouble(history.getLatitude());
+        double longitude = Double.parseDouble(history.getLongitude());
+        LatLng latLng = new LatLng(latitude, longitude);
+        return latLng;
+    }
+
+    @NonNull
+    private Timestamp getTimestamp(LocationHistory history) {
+        //Time
+        final long time = Long.parseLong(history.getTimeInMillis());
+        final Timestamp timestamp = new Timestamp(time);
+        return timestamp;
     }
 }

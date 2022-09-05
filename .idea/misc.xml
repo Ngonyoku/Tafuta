@@ -3,12 +3,21 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/drawable-v24/ic_user_placeholder.xml" value="0.151" />
+        <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/drawable/ic_add_image.xml" value="0.164" />
+        <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/drawable/ic_map.xml" value="0.164" />
         <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/layout/activity_add_member.xml" value="0.17864583333333334" />
+        <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/layout/activity_login.xml" value="0.1625" />
         <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/layout/activity_main.xml" value="0.22" />
-        <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/layout/activity_tracking.xml" value="0.16666666666666666" />
+        <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/layout/activity_member_welcome_screen.xml" value="0.16666666666666666" />
+        <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/layout/activity_splash_screen.xml" value="0.17864583333333334" />
+        <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/layout/activity_tracking.xml" value="0.22" />
+        <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/layout/bottom_sheet_user_info.xml" value="0.22" />
         <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/layout/item_members.xml" value="0.22" />
         <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/layout/layout_add_member.xml" value="0.16666666666666666" />
         <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/layout/layout_tracking_activity.xml" value="0.16666666666666666" />
+        <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/menu/main_activity_toolbar.xml" value="0.17864583333333334" />
+        <entry key="..\:/Users/pc/AndroidStudioProjects/Tafuta/app/src/main/res/menu/tracking_activity_toolbar.xml" value="0.17864583333333334" />
       </map>
     </option>
   </component>

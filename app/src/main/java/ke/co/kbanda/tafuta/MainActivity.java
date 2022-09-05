@@ -1,18 +1,27 @@
 package ke.co.kbanda.tafuta;
 
+import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -24,6 +33,7 @@ import java.util.List;
 
 import ke.co.kbanda.tafuta.adapters.MembersListAdapter;
 import ke.co.kbanda.tafuta.models.Member;
+import ke.co.kbanda.tafuta.services.LocationTrackerService;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -34,20 +44,35 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseDatabase firebaseDatabase;
     private DatabaseReference databaseReference;
     private ProgressDialog progressDialog;
+    private Toolbar toolbar;
 
+    private FirebaseUser currentUser;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        progressDialog = new ProgressDialog(this);
+        progressDialog = new ProgressDialog(MainActivity.this);
         membersList = new ArrayList<>();
 
+        toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle(getString(R.string.app_name));
         firebaseAuth = FirebaseAuth.getInstance();
+        currentUser = firebaseAuth.getCurrentUser();
         firebaseDatabase = FirebaseDatabase.getInstance();
         databaseReference = firebaseDatabase.getReference();
 
+        if (currentUser == null) {
+            goBackToSplashscreen();
+            finish();
+        } else {
+            identifyUserRole();
+        }
+    }
+
+    private void continueLoadingViews() {
         recyclerView = findViewById(R.id.recyclerViewMembersList);
         recyclerViewAdapter = new MembersListAdapter(membersList, this);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -55,15 +80,12 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(recyclerViewAdapter);
 
         recyclerViewAdapter
-                .setOnMemberClickedListener(new MembersListAdapter.OnMemberClickedListener() {
-                    @Override
-                    public void onClick(int position) {
-                        Member member = membersList.get(position);
+                .setOnMemberClickedListener(position -> {
+                    Member member = membersList.get(position);
 
-                        Intent intent = new Intent(MainActivity.this, TrackingActivity.class);
-                        intent.putExtra("member", member);
-                        startActivity(intent);
-                    }
+                    Intent intent = new Intent(MainActivity.this, TrackingActivity.class);
+                    intent.putExtra("member", member);
+                    startActivity(intent);
                 })
         ;
 
@@ -73,7 +95,121 @@ public class MainActivity extends AppCompatActivity {
                 })
         ;
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (!foregroundServiceRunning()) {
+                startForegroundService(new Intent(this, LocationTrackerService.class));
+            }
+
+        }
         fetchDataFromDatabase();
+    }
+
+    public boolean foregroundServiceRunning() {
+        ActivityManager systemService = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo runningServiceInfo : systemService.getRunningServices(Integer.MAX_VALUE)) {
+            if (LocationTrackerService.class.getName().equals(runningServiceInfo.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    private void identifyUserRole() {
+        firebaseDatabase
+                .getReference()
+                .child("Members")
+                .child(currentUser.getUid())
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Member member = task.getResult().getValue(Member.class);
+                        final String role = member.getRole();
+                        Log.d(TAG, "identifyUserRole: Member Role -> " + role);
+                        evaluateUserRole(role);
+                        Log.d(TAG, "identifyUserRole: Task Successfull");
+                    }
+                })
+        ;
+    }
+
+    private void evaluateUserRole(String role) {
+        if (role != null) {
+            switch (role) {
+                case "ADMIN": {
+                    //Do nothing
+                    continueLoadingViews();
+                    return;
+                }
+                case "MEMBER": {
+                    //Take to member dashboard
+                    goBackToMemberScreen();
+                }
+                default: {
+
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        if (currentUser == null) {
+            goBackToSplashscreen();
+            finish();
+        } else {
+            identifyUserRole();
+        }
+        super.onResume();
+    }
+
+    private void goBackToMemberScreen() {
+        Intent intent = new Intent(this, MemberWelcomeScreen.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+        progressDialog.dismiss();
+        finish();
+    }
+
+    private void goBackToSplashscreen() {
+        Intent intent = new Intent(this, SplashScreenActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+        progressDialog.dismiss();
+        finish();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_activity_toolbar, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.actionLogout: {
+                new AlertDialog.Builder(this)
+                        .setTitle("Log out")
+                        .setMessage("Are you sure you want to log out?")
+                        .setPositiveButton("Yes", ((dialogInterface, i) -> {
+                            logout();
+                        }))
+                        .setNegativeButton("No", ((dialogInterface, i) -> {
+                            dialogInterface.dismiss();
+                        }))
+                        .create()
+                        .show();
+            }
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+
+    }
+
+    private void logout() {
+        firebaseAuth.signOut();
+        goBackToSplashscreen();
     }
 
     private void fetchDataFromDatabase() {

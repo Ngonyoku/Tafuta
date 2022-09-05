@@ -135,7 +135,7 @@ public class AddMemberActivity extends AppCompatActivity {
                 progressDialog.show();
                 String email = member.getEmail();
 
-                // First Name will be the default password
+                //email will be the default password
                 firebaseAuth
                         .createUserWithEmailAndPassword(email, email)
                         .addOnCompleteListener(task -> {
@@ -144,6 +144,7 @@ public class AddMemberActivity extends AppCompatActivity {
                                 Log.d(TAG, "createMemberAccount: User Account created successfully");
                                 if (task.getResult().getUser() != null) {
                                     String uid = task.getResult().getUser().getUid();//Get the user Id
+                                    member.setUserId(uid);
                                     saveToDatabase(member, uid);
                                 }
                             } else {

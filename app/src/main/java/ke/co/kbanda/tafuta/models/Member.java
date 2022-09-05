@@ -9,6 +9,8 @@ public class Member implements Serializable {
     private String phoneNumber;
     private String imageUrl;
     private String label;
+    private String userId;
+    private String role; //Parent, Member
 
     public Member(String firstName, String lastName, String email, String phoneNumber, String imageUrl, String label) {
         this.firstName = firstName;
@@ -19,7 +21,50 @@ public class Member implements Serializable {
         this.label = label;
     }
 
+    public Member(String firstName, String lastName, String email, String phoneNumber, String imageUrl, String label, String userId, String role) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.imageUrl = imageUrl;
+        this.label = label;
+        this.userId = userId;
+        this.role = role;
+    }
+
+    public Member(
+            String firstName,
+            String lastName,
+            String email,
+            String phoneNumber,
+            String imageUrl,
+            String label,
+            String userId
+    ) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.imageUrl = imageUrl;
+        this.label = label;
+        this.userId = userId;
+    }
+
     public Member() {
+    }
+
+    @Override
+    public String toString() {
+        return "Member{" +
+                "firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", email='" + email + '\'' +
+                ", phoneNumber='" + phoneNumber + '\'' +
+                ", imageUrl='" + imageUrl + '\'' +
+                ", label='" + label + '\'' +
+                ", userId='" + userId + '\'' +
+                ", role='" + role + '\'' +
+                '}';
     }
 
     public String getFirstName() {
@@ -70,15 +115,19 @@ public class Member implements Serializable {
         this.label = label;
     }
 
-    @Override
-    public String toString() {
-        return "Members{" +
-                "firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", email='" + email + '\'' +
-                ", phoneNumber='" + phoneNumber + '\'' +
-                ", imageUrl='" + imageUrl + '\'' +
-                ", label='" + label + '\'' +
-                '}';
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }
