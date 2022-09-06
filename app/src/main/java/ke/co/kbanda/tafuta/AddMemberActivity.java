@@ -78,7 +78,6 @@ public class AddMemberActivity extends AppCompatActivity {
                 })
         ;
 
-
         findViewById(R.id.fabAddMemberProfileImage)
                 .setOnClickListener(v -> {
                     Pix
@@ -89,7 +88,8 @@ public class AddMemberActivity extends AppCompatActivity {
                                             .setSpanCount(4)
                                             .setCount(1)
                                             .setMode(Options.Mode.Picture)
-                                            .setPath(getString(R.string.app_name) + "/"));
+                                            .setPath(getString(R.string.app_name) + "/"))
+                    ;
                 })
         ;
     }
@@ -134,6 +134,7 @@ public class AddMemberActivity extends AppCompatActivity {
                 progressDialog.setMessage("Creating user account..!");
                 progressDialog.show();
                 String email = member.getEmail();
+                member.setRole("MEMBER");
 
                 //email will be the default password
                 firebaseAuth

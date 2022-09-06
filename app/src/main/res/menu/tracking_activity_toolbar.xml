@@ -16,4 +16,7 @@
         android:id="@+id/actionGetCurrentLocation"
         android:icon="@drawable/ic_map"
         android:title="get current location" />
+    <item
+        android:id="@+id/actionMakeAdmin"
+        android:title="Make Admin" />
 </menu>

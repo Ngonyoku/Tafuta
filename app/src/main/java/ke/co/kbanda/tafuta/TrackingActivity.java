@@ -15,6 +15,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -123,10 +124,36 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                 displayLocationHistory();
                 return true;
             }
+            case R.id.actionMakeAdmin: {
+                promoteToAdmin();
+            }
             default:
                 return super.onOptionsItemSelected(item);
         }
 
+    }
+
+    private void promoteToAdmin() {
+        if (member != null) {
+            if (member.getUserId() != null && !member.getUserId().isEmpty()) {
+                firebaseDatabase
+                        .getReference()
+                        .child("Members")
+                        .child(member.getUserId())
+                        .child("role")
+                        .setValue("ADMIN")
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                Log.d(TAG, "promoteToAdmin: Successfully promoted to admin");
+                                Toast.makeText(this, "Successfully promoted", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Log.d(TAG, "promoteToAdmin: Failed to promote to admin -> " + task.getException().getMessage());
+                                Toast.makeText(this, "Successfully promoted", Toast.LENGTH_SHORT).show();
+                            }
+                        })
+                ;
+            }
+        }
     }
 
     private void getMostRecentLocation() {
