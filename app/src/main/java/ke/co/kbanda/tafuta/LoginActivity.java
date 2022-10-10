@@ -1,14 +1,18 @@
 package ke.co.kbanda.tafuta;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -45,6 +49,54 @@ public class LoginActivity extends AppCompatActivity {
                 .setOnClickListener(v -> {
                     validateDetails();
                 });
+
+        findViewById(R.id.forgotPassword)
+                .setOnClickListener(v -> {
+                    String email = emailTIL.getEditText().getText().toString();
+
+                    progressDialog.setMessage("We are sending password recovery email to " + email);
+                    progressDialog.create();
+                    progressDialog.show();
+                    if (!email.trim().isEmpty()) {
+                        emailTIL.setError(null);
+                        progressDialog.dismiss();
+                        firebaseAuth
+                                .sendPasswordResetEmail(email)
+                                .addOnCompleteListener(task -> {
+                                    if (task.isSuccessful()) {
+                                        new AlertDialog
+                                                .Builder(LoginActivity.this)
+                                                .setTitle("Password Recovery")
+                                                .setMessage("Email sent")
+                                                .setPositiveButton("Open Email", ((dialogInterface, i) -> {
+                                                    try {
+                                                        Intent intent = new Intent(Intent.ACTION_MAIN);
+                                                        intent.addCategory(Intent.CATEGORY_APP_EMAIL);
+                                                        startActivity(intent);
+                                                    } catch (android.content.ActivityNotFoundException e) {
+                                                        Toast.makeText(LoginActivity.this, "There is no email client installed.", Toast.LENGTH_SHORT).show();
+                                                    }
+                                                }))
+                                                .create()
+                                                .show();
+                                    } else {
+                                        new AlertDialog
+                                                .Builder(LoginActivity.this)
+                                                .setTitle("Password Recovery")
+                                                .setMessage("Failed to send recovery email. \n" + task.getException().getMessage())
+                                                .create()
+                                                .show();
+
+                                    }
+                                })
+                        ;
+                    } else {
+                        progressDialog.dismiss();
+                        emailTIL.requestFocus();
+                        emailTIL.setError("Email is required!");
+                    }
+                })
+        ;
     }
 
     private void validateDetails() {

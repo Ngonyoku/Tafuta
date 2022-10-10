@@ -64,12 +64,12 @@ public class MainActivity extends AppCompatActivity {
         firebaseDatabase = FirebaseDatabase.getInstance();
         databaseReference = firebaseDatabase.getReference();
 
-        if (currentUser == null) {
-            goBackToSplashscreen();
-            finish();
-        } else {
-            identifyUserRole();
-        }
+//        if (currentUser == null) {
+//            goBackToSplashscreen();
+//            finish();
+//        } else {
+//            identifyUserRole();
+//        }
     }
 
     private void continueLoadingViews() {
@@ -89,17 +89,16 @@ public class MainActivity extends AppCompatActivity {
                 })
         ;
 
-        findViewById(R.id.fabAddMember)
-                .setOnClickListener(v -> {
-                    startActivity(new Intent(this, AddMemberActivity.class));
-                })
-        ;
+//        findViewById(R.id.fabAddMember)
+//                .setOnClickListener(v -> {
+//                    startActivity(new Intent(this, AddMemberActivity.class));
+//                })
+//        ;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (!foregroundServiceRunning()) {
                 startForegroundService(new Intent(this, LocationTrackerService.class));
             }
-
         }
         fetchDataFromDatabase();
     }
@@ -204,7 +203,6 @@ public class MainActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
-
     }
 
     private void logout() {

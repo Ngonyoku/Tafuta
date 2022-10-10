@@ -14,9 +14,13 @@
         app:showAsAction="ifRoom|withText" />
     <item
         android:id="@+id/actionGetCurrentLocation"
-        android:icon="@drawable/ic_map"
+        android:icon="@drawable/ic_gps"
         android:title="get current location" />
     <item
         android:id="@+id/actionMakeAdmin"
         android:title="Make Admin" />
+    <item
+        android:id="@+id/actionRemoveMember"
+        android:icon="@drawable/ic_delete"
+        android:title="Remove Member" />
 </menu>

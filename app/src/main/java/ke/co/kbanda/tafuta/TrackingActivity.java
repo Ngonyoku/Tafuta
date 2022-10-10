@@ -7,6 +7,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -29,6 +30,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -61,6 +64,8 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
 
     private FirebaseDatabase firebaseDatabase;
     private DatabaseReference databaseReference;
+    private FirebaseAuth firebaseAuth;
+    private FirebaseUser currentUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +80,8 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         locationHistories = new ArrayList<>();
 
         firebaseDatabase = FirebaseDatabase.getInstance();
+        firebaseAuth = FirebaseAuth.getInstance();
+        currentUser = firebaseAuth.getCurrentUser();
         databaseReference = firebaseDatabase.getReference();
 
         CircleImageView profileImage = binding.profileImage;
@@ -127,10 +134,64 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
             case R.id.actionMakeAdmin: {
                 promoteToAdmin();
             }
+            case R.id.actionRemoveMember: {
+                new AlertDialog.Builder(this)
+                        .setTitle("Delete Member")
+                        .setMessage("Are you sure you want to delete this member?")
+                        .setPositiveButton("Yes", ((dialogInterface, i) -> {
+                            deleteMemberFromDatabase();
+                        }))
+                        .setNegativeButton("cancel", ((dialogInterface, i) -> {
+                            dialogInterface.dismiss();
+                        }))
+                        .create()
+                        .show()
+                ;
+            }
             default:
                 return super.onOptionsItemSelected(item);
         }
 
+    }
+
+    private void deleteMemberFromDatabase() {
+        if (currentUser != null) {
+            firebaseDatabase
+                    .getReference()
+                    .child("LocationHistory")
+                    .child(member.getUserId())
+                    .removeValue()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(this, "Location History wiped!", Toast.LENGTH_SHORT).show();
+                            firebaseDatabase
+                                    .getReference()
+                                    .child("Members")
+                                    .child(member.getUserId())
+                                    .removeValue()
+                                    .addOnCompleteListener(t -> {
+                                        if (t.isSuccessful()) {
+                                            Toast.makeText(this, "Member Deleted successfully", Toast.LENGTH_SHORT).show();
+                                            finish();
+                                        } else {
+                                            new AlertDialog.Builder(this)
+                                                    .setTitle("Failed")
+                                                    .setMessage("Failed to delete user.\n" + t.getException().getMessage())
+                                                    .create()
+                                                    .show();
+                                        }
+                                    })
+                            ;
+                        } else {
+                            new AlertDialog.Builder(this)
+                                    .setTitle("Failed")
+                                    .setMessage("Failed to delete user.\n" + task.getException().getMessage())
+                                    .create()
+                                    .show();
+                        }
+                    })
+            ;
+        }
     }
 
     private void promoteToAdmin() {
