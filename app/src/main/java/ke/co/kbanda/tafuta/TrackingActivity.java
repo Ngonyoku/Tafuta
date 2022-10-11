@@ -1,10 +1,11 @@
 package ke.co.kbanda.tafuta;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -32,7 +33,6 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -41,10 +41,10 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import ke.co.kbanda.tafuta.adapters.LocationHistoryRecyclerViewAdapter;
 import ke.co.kbanda.tafuta.databinding.ActivityTrackingBinding;
 import ke.co.kbanda.tafuta.models.LocationHistory;
 import ke.co.kbanda.tafuta.models.Member;
@@ -242,10 +242,15 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                 .inflate(R.layout.bottom_sheet_user_info,
                         (ConstraintLayout) findViewById(R.id.bottomSheetContainer)
                 );
-        TextView name = (TextView) bottomSheetView.findViewById(R.id.displayName);
-        TextView email = (TextView) bottomSheetView.findViewById(R.id.email);
-        TextView label = (TextView) bottomSheetView.findViewById(R.id.label);
-        ImageView profileImage = (ImageView) bottomSheetView.findViewById(R.id.profileImageImageView);
+        TextView name = bottomSheetView.findViewById(R.id.displayName);
+        TextView email = bottomSheetView.findViewById(R.id.email);
+        TextView label = bottomSheetView.findViewById(R.id.label);
+        ImageView profileImage = bottomSheetView.findViewById(R.id.profileImageImageView);
+        RecyclerView locationHistoryRecyclerView = bottomSheetView.findViewById(R.id.locationHistoryRecyclerView);
+        LocationHistoryRecyclerViewAdapter recyclerViewAdapter = new LocationHistoryRecyclerViewAdapter(TrackingActivity.this, locationHistories);
+        locationHistoryRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, true));
+        locationHistoryRecyclerView.setHasFixedSize(true);
+        locationHistoryRecyclerView.setAdapter(recyclerViewAdapter);
 
         if (member != null) {
             String memberName = member.getFirstName() + " " + member.getLastName();
@@ -382,9 +387,9 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                     }
                 }
 
-                map.addPolyline(
-                        polylineOptions
-                );
+//                map.addPolyline(
+//                        polylineOptions
+//                );
             }
         } else {
             Log.d(TAG, "drawPolylinesOnMap: LocationHistories is NULL!");
