@@ -52,14 +52,16 @@ public class LocationHistoryRecyclerViewAdapter extends RecyclerView.Adapter<Loc
 
         Geocoder geocoder = new Geocoder(context, Locale.getDefault());
         try {
-            List<Address> addresses = geocoder.getFromLocation(lat, lng, 1);
-            Address locationAddress = addresses.get(0);
-            String locationInfo = locationAddress.getCountryName();
-            locationInfo = locationInfo + "\n" + locationAddress.getAdminArea();
-            locationInfo = locationInfo + "\n" + locationAddress.getLocality();
+            if (lat != null && lng != null) {
+                List<Address> addresses = geocoder.getFromLocation(lat, lng, 1);
+                Address locationAddress = addresses.get(0);
+                String locationInfo = locationAddress.getCountryName();
+                locationInfo = locationInfo + "\n" + locationAddress.getAdminArea();
+                locationInfo = locationInfo + "\n" + locationAddress.getLocality();
 
-            holder.place.setText(locationInfo);
-            Log.d(TAG, "onBindViewHolder: Location Information -> " + locationInfo);
+                holder.place.setText(locationInfo);
+                Log.d(TAG, "onBindViewHolder: Location Information -> " + locationInfo);
+            }
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

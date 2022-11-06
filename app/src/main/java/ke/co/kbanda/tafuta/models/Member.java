@@ -10,7 +10,7 @@ public class Member implements Serializable {
     private String imageUrl;
     private String label;
     private String userId;
-    private String role; //Parent, Member
+    private String role = "MEMBER"; //Parent, Member
 
     public Member(String firstName, String lastName, String email, String phoneNumber, String imageUrl, String label) {
         this.firstName = firstName;

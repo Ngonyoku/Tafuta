@@ -15,7 +15,8 @@
     <item
         android:id="@+id/actionGetCurrentLocation"
         android:icon="@drawable/ic_gps"
-        android:title="get current location" />
+        android:title="get current location"
+        app:showAsAction="ifRoom|withText" />
     <item
         android:id="@+id/actionMakeAdmin"
         android:title="Make Admin" />

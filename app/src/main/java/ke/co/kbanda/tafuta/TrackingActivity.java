@@ -1,6 +1,7 @@
 package ke.co.kbanda.tafuta;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -9,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -41,13 +43,18 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import ke.co.kbanda.tafuta.adapters.LocationHistoryRecyclerViewAdapter;
 import ke.co.kbanda.tafuta.databinding.ActivityTrackingBinding;
 import ke.co.kbanda.tafuta.models.LocationHistory;
 import ke.co.kbanda.tafuta.models.Member;
+import ke.co.kbanda.tafuta.models.dto.LocationHistoryWithDate;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
@@ -58,6 +65,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     private ActivityTrackingBinding binding;
     private Member member = null;
     private List<LocationHistory> locationHistories;
+    private List<LocationHistoryWithDate> locationHistoryWithDates;
 
     private FusedLocationProviderClient locationProviderClient;
     private Toolbar toolbar;
@@ -66,6 +74,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     private DatabaseReference databaseReference;
     private FirebaseAuth firebaseAuth;
     private FirebaseUser currentUser;
+    private LocationHistoryRecyclerViewAdapter recyclerViewAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +87,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         locationHistories = new ArrayList<>();
+        locationHistoryWithDates = new ArrayList<>();
 
         firebaseDatabase = FirebaseDatabase.getInstance();
         firebaseAuth = FirebaseAuth.getInstance();
@@ -128,6 +138,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                 return true;
             }
             case R.id.actionRefreshMap: {
+                locationHistories.clear();
                 displayLocationHistory();
                 return true;
             }
@@ -151,7 +162,6 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
             default:
                 return super.onOptionsItemSelected(item);
         }
-
     }
 
     private void deleteMemberFromDatabase() {
@@ -223,14 +233,13 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                 LocationHistory history = locationHistories.get(locationHistories.size() - 1);
                 Timestamp timestamp = getTimestamp(history);
                 LatLng latLng = getLatLng(history);
-
-                map.addMarker(
-                        new MarkerOptions()
-                                .title("Last known location")
-                                .position(latLng)
-                                .snippet(timestamp.toString())
+                map.clear();
+                map.addMarker(new MarkerOptions()
+                        .position(latLng)
+                        .title(timestamp.toString())
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
                 );
-                map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 20));
             }
         }
     }
@@ -247,7 +256,8 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         TextView label = bottomSheetView.findViewById(R.id.label);
         ImageView profileImage = bottomSheetView.findViewById(R.id.profileImageImageView);
         RecyclerView locationHistoryRecyclerView = bottomSheetView.findViewById(R.id.locationHistoryRecyclerView);
-        LocationHistoryRecyclerViewAdapter recyclerViewAdapter = new LocationHistoryRecyclerViewAdapter(TrackingActivity.this, locationHistories);
+
+        recyclerViewAdapter = new LocationHistoryRecyclerViewAdapter(TrackingActivity.this, locationHistories);
         locationHistoryRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, true));
         locationHistoryRecyclerView.setHasFixedSize(true);
         locationHistoryRecyclerView.setAdapter(recyclerViewAdapter);
@@ -272,15 +282,21 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         bottomSheetDialog.show();
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private void groupByDate() {
+        Map<String, List<LocationHistoryWithDate>> historyByTimeInMillis =
+                locationHistoryWithDates.stream().collect(Collectors.groupingBy(LocationHistoryWithDate::getDate));
+        Log.d(TAG, "groupByDate: By time -> " + locationHistoryWithDates);
+        //        Map<Date, List<LocationHistoryWithDate>> historyByTimeInMillis =
+//                new HashMap<>();
+//        for (LocationHistoryWithDate locationHistory : locationHistoryWithDates) {
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+//                historyByTimeInMillis.computeIfAbsent(locationHistory.getDate(), k -> new ArrayList<>()).add(locationHistory);
+//                Log.d(TAG, "groupByDate: History By Time -> " + historyByTimeInMillis);
+//            }
+//        }
+    }
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         map = googleMap;
@@ -296,6 +312,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                 Manifest.permission.ACCESS_FINE_LOCATION
         };
         if (EasyPermissions.hasPermissions(this, permissions)) {
+            locationHistories.clear();
             displayLocationHistory();
         } else {
             EasyPermissions
@@ -350,6 +367,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         }
     }
 
+
     private void drawPolylinesOnMap() {
         Log.d(TAG, "drawPolylinesOnMap: Drawing Polyines");
         if (locationHistories != null) {
@@ -363,33 +381,35 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                         LatLng latLng = getLatLng(history);
                         polylineOptions.add(latLng);
                         Log.d(TAG, "drawPolylinesOnMap: history -> " + history.toString());
+                        final Timestamp timestamp = getTimestamp(history);
 
+                        //Add Marker
+                        map
+                                .addMarker(new MarkerOptions()
+                                        .position(latLng)
+                                        .title(timestamp.toString())
+                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
+                                )
+                        ;
+
+                        //Check if the list is finished
                         if (i + 1 == locationHistories.size()) {
-                            final Timestamp timestamp = getTimestamp(history);
                             //Add Marker
-                            map.addMarker(new MarkerOptions()
-                                    .position(latLng)
-                                    .title(timestamp.toString())
-                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                            map
+                                    .addMarker(new MarkerOptions()
+                                            .position(latLng)
+                                            .title(timestamp.toString())
+                                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
 
-                            );
-                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
-                        } else {
-                            final Timestamp timestamp = getTimestamp(history);
-                            //Add Marker
-                            map.addMarker(new MarkerOptions()
-                                    .position(latLng)
-                                    .title(timestamp.toString())
-                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
-
-                            );
+                                    )
+                            ;
+//                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
                         }
                     }
+                    map.addPolyline(
+                            polylineOptions
+                    );
                 }
-
-//                map.addPolyline(
-//                        polylineOptions
-//                );
             }
         } else {
             Log.d(TAG, "drawPolylinesOnMap: LocationHistories is NULL!");

@@ -199,6 +199,7 @@ public class AddMemberActivity extends AppCompatActivity {
                                                     progressDialog.dismiss();
                                                     if (databaseTask.isSuccessful()) {
                                                         Toast.makeText(this, "Member added successfully", Toast.LENGTH_SHORT).show();
+                                                        Log.d(TAG, "saveToDatabase: New User Id -> " + firebaseAuth.getCurrentUser().getUid());
                                                         finish();
                                                     } else {
                                                         Toast.makeText(this, "Failed to add member!", Toast.LENGTH_SHORT).show();
@@ -238,14 +239,26 @@ public class AddMemberActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK && requestCode == GET_IMAGE_REQUESTCODE) {
-            assert data != null;
-            ArrayList<String> returnValue = data.getStringArrayListExtra(Pix.IMAGE_RESULTS);
-            imageUri = returnValue.get(0);
-            Glide
-                    .with(this)
-                    .load(returnValue.get(0))
-                    .centerCrop()
-                    .into(memberImage);
+            if (data != null) {
+                ArrayList<String> returnValue = data.getStringArrayListExtra(Pix.IMAGE_RESULTS);
+                if (!returnValue.isEmpty()) {
+                    imageUri = returnValue.get(0);
+                    if (imageUri != null) {
+                        Glide
+                                .with(this)
+                                .load(returnValue.get(0))
+                                .placeholder(getDrawable(R.drawable.ic_user_placeholder))
+                                .centerCrop()
+                                .into(memberImage)
+                        ;
+                    } else Log.d(TAG, "onActivityResult: imageUri is NULL");
+                } else {
+                    Toast.makeText(this, "No Image value detected", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "onActivityResult: No images selected");
+                }
+            }
+        } else {
+            Toast.makeText(this, "No Image selected", Toast.LENGTH_SHORT).show();
         }
     }
 
